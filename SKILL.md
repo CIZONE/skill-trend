@@ -58,12 +58,13 @@ WebSearch: "github claude skills most popular 2026"
 <div class="skill-card">
   <div class="rank">#1</div>
   <div class="skill-info">
-    <div class="skill-name">owner/repo</div>
+    <a class="skill-name" href="https://github.com/owner/repo" target="_blank">owner/repo</a>
     <div class="skill-desc">一句话简要介绍</div>
   </div>
   <div class="skill-stars">★ 12.3K</div>
 </div>
 ```
+**链接规则**：skill-name 必须使用 `<a>` 标签，href 指向 `https://github.com/owner/repo`，`target="_blank"` 在新标签页打开。
 
 **介绍编写原则**：
 - 控制在 30 字以内
