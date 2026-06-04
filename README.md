@@ -25,13 +25,13 @@
 ## 📦 安装
 
 ```bash
-npx skills add <your-github>/skill-trend -g -y
+npx skills add CIZONE/skill-trend -g -y
 ```
 
 或手动复制：
 
 ```bash
-git clone https://github.com/<your-username>/skill-trend.git
+git clone https://github.com/CIZONE/skill-trend.git
 cp -r skill-trend ~/.claude/skills/skill-trend
 ```
 
@@ -116,4 +116,4 @@ skill-trend/
 
 ## 📄 License
 
-MIT © 2026 CIZI
+MIT © 2026 CIZONE
