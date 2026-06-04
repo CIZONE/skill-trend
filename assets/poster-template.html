@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Skills — 趋势排行榜</title>
+<style>
+  /* ====== RESET & BASE ====== */
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#06060d;
+    color:#e0e8f0;
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* ====== ANIMATED BACKGROUND ====== */
+  .bg-grid{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(0,240,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,240,255,.04) 1px,transparent 1px);
+    background-size:60px 60px;
+    animation:gridMove 20s linear infinite;
+  }
+  @keyframes gridMove{0%{transform:translate(0,0)}100%{transform:translate(60px,60px)}}
+
+  .bg-particles{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+  }
+  .particle{
+    position:absolute;border-radius:50%;
+    animation:float 6s ease-in-out infinite;
+  }
+  .particle:nth-child(1){width:2px;height:2px;background:#00f0ff;top:10%;left:15%;animation-delay:0s}
+  .particle:nth-child(2){width:3px;height:3px;background:#ff00aa;top:25%;left:75%;animation-delay:1.5s}
+  .particle:nth-child(3){width:2px;height:2px;background:#ffd700;top:60%;left:30%;animation-delay:3s}
+  .particle:nth-child(4){width:4px;height:4px;background:#00f0ff;top:80%;left:60%;animation-delay:4.5s}
+  .particle:nth-child(5){width:2px;height:2px;background:#ff00aa;top:40%;left:90%;animation-delay:2s}
+  .particle:nth-child(6){width:3px;height:3px;background:#ffd700;top:15%;left:50%;animation-delay:5s}
+  .particle:nth-child(7){width:2px;height:2px;background:#00ff88;top:70%;left:10%;animation-delay:1s}
+  .particle:nth-child(8){width:3px;height:3px;background:#00f0ff;top:45%;left:45%;animation-delay:3.5s}
+  @keyframes float{
+    0%,100%{transform:translateY(0) scale(1);opacity:.6}
+    50%{transform:translateY(-30px) scale(1.5);opacity:1}
+  }
+
+  /* ====== CONTENT LAYER ====== */
+  .content{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:40px 30px}
+
+  /* ====== HEADER ====== */
+  .header{text-align:center;margin-bottom:50px}
+  .header .badge{
+    display:inline-block;padding:6px 20px;border:1px solid rgba(0,240,255,.3);
+    border-radius:20px;font-size:13px;letter-spacing:4px;color:#00f0ff;
+    text-transform:uppercase;margin-bottom:20px;
+    animation:badgePulse 2s ease-in-out infinite;
+  }
+  @keyframes badgePulse{0%,100%{border-color:rgba(0,240,255,.3);box-shadow:0 0 10px rgba(0,240,255,.1)}50%{border-color:rgba(0,240,255,.7);box-shadow:0 0 25px rgba(0,240,255,.25)}}
+
+  .header h1{
+    font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:2px;
+    background:linear-gradient(135deg,#00f0ff 0%,#ff00aa 50%,#ffd700 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+    filter:drop-shadow(0 0 30px rgba(0,240,255,.4));
+    margin-bottom:10px;
+  }
+  .header .subtitle{
+    font-size:15px;color:#6a7a8a;letter-spacing:3px;
+  }
+  .header .date-range{
+    margin-top:12px;font-size:13px;color:#4a5a6a;
+  }
+  .header .divider{
+    width:120px;height:2px;margin:20px auto;
+    background:linear-gradient(90deg,transparent,#00f0ff,transparent);
+  }
+
+  /* ====== TWO-COLUMN LAYOUT ====== */
+  .columns{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:40px}
+
+  .column{position:relative}
+  .column-header{
+    display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .column-icon{
+    width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+  }
+  .column-icon.weekly{background:rgba(0,240,255,.12);color:#00f0ff;box-shadow:0 0 20px rgba(0,240,255,.15)}
+  .column-icon.monthly{background:rgba(255,0,170,.12);color:#ff00aa;box-shadow:0 0 20px rgba(255,0,170,.15)}
+  .column-title{font-size:22px;font-weight:700;letter-spacing:1px}
+  .column-title.weekly{color:#00f0ff}
+  .column-title.monthly{color:#ff00aa}
+  .column-subtitle{font-size:12px;color:#5a6a7a;letter-spacing:2px}
+
+  /* ====== SKILL CARD ====== */
+  .skill-card{
+    display:flex;align-items:center;gap:16px;padding:16px 20px;
+    margin-bottom:10px;border-radius:12px;cursor:default;
+    background:rgba(255,255,255,.02);
+    border:1px solid rgba(255,255,255,.04);
+    transition:all .3s ease;
+    position:relative;overflow:hidden;
+  }
+  .skill-card::before{
+    content:'';position:absolute;inset:0;border-radius:12px;
+    background:linear-gradient(135deg,rgba(0,240,255,0),rgba(255,0,170,0));
+    opacity:0;transition:opacity .3s ease;
+  }
+  .skill-card:hover{
+    transform:translateX(6px);
+    border-color:rgba(0,240,255,.15);
+    box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 1px rgba(0,240,255,.2);
+  }
+  .skill-card:hover::before{opacity:.05}
+  .skill-card:first-of-type{
+    background:rgba(255,215,0,.04);
+    border-color:rgba(255,215,0,.12);
+    box-shadow:0 0 20px rgba(255,215,0,.06);
+  }
+  .skill-card:nth-child(2){
+    background:rgba(192,192,192,.03);
+    border-color:rgba(192,192,192,.08);
+  }
+  .skill-card:nth-child(3){
+    background:rgba(205,127,50,.03);
+    border-color:rgba(205,127,50,.08);
+  }
+
+  .rank{
+    font-size:26px;font-weight:900;min-width:44px;text-align:center;
+    letter-spacing:-1px;
+  }
+  .rank.r1{background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .rank.r2{background:linear-gradient(180deg,#c0c0c0,#8090a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .rank.r3{background:linear-gradient(180deg,#cd7f32,#a0522d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .rank.rn{color:#3a4a5a}
+
+  .skill-info{flex:1;min-width:0}
+  .skill-name{
+    font-size:15px;font-weight:600;color:#d0d8e0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:4px;
+  }
+  .skill-desc{
+    font-size:12px;color:#5a6a7a;line-height:1.4;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .skill-stars{
+    font-size:13px;font-weight:700;color:#ffd700;
+    white-space:nowrap;min-width:70px;text-align:right;
+    text-shadow:0 0 10px rgba(255,215,0,.3);
+  }
+
+  /* ====== FOOTER ====== */
+  .footer{
+    text-align:center;padding:30px 0;border-top:1px solid rgba(255,255,255,.04);
+    font-size:12px;color:#4a5a6a;letter-spacing:2px;
+  }
+  .footer span{color:#00f0ff}
+
+  /* ====== RESPONSIVE ====== */
+  @media(max-width:900px){
+    .columns{grid-template-columns:1fr;gap:32px}
+    .content{padding:30px 20px}
+    .skill-card:hover{transform:translateX(3px)}
+  }
+
+  /* ====== SCROLLBAR ====== */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(0,240,255,.15);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-particles">
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+  <div class="particle"></div><div class="particle"></div>
+</div>
+
+<div class="content">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">Claude Code Skills · Trending</div>
+    <h1>技能趋势排行榜</h1>
+    <div class="subtitle">GITHUB OPEN-SOURCE ECOSYSTEM</div>
+    <div class="divider"></div>
+    <div class="date-range">数据范围：__DATE_RANGE__ &nbsp;|&nbsp; 最低收录门槛：★ 20+</div>
+  </div>
+
+  <!-- TWO COLUMNS -->
+  <div class="columns">
+
+    <!-- WEEKLY -->
+    <div class="column">
+      <div class="column-header">
+        <div class="column-icon weekly">W</div>
+        <div>
+          <div class="column-title weekly">本周热榜</div>
+          <div class="column-subtitle">WEEKLY TRENDING · TOP 10</div>
+        </div>
+      </div>
+      __WEEKLY_DATA__
+    </div>
+
+    <!-- MONTHLY -->
+    <div class="column">
+      <div class="column-header">
+        <div class="column-icon monthly">M</div>
+        <div>
+          <div class="column-title monthly">本月热榜</div>
+          <div class="column-subtitle">MONTHLY TRENDING · TOP 10</div>
+        </div>
+      </div>
+      __MONTHLY_DATA__
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    数据来源 <span>GitHub</span> & <span>skills.sh</span> &nbsp;·&nbsp;
+    由 <span>Claude Code skill-trend</span> 自动生成 &nbsp;·&nbsp;
+    __GENERATE_TIME__
+  </div>
+
+</div>
+</body>
+</html>
