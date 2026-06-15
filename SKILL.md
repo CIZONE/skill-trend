@@ -1,9 +1,9 @@
 ---
-name: skill-trend
+name: fetch-skills-trend
 description: Generate a tech-poster style HTML leaderboard of trending Claude Code skills from GitHub. Use this skill whenever the user asks about "skill趋势", "skill排行榜", "trending skills", "最近热门技能", "最近skill趋势", "热门skill", "技能排行", or wants a ranking/leaderboard of popular skills. This skill searches GitHub, filters low-star projects, and produces a stunning sci-fi poster with weekly and monthly rankings side by side.
 ---
 
-# Skill Trend - GitHub 技能趋势排行榜生成器
+# Fetch Skills Trend - GitHub 技能趋势排行榜生成器
 
 当用户询问 Claude Code 技能趋势时，自动搜索 GitHub 热门项目并生成一张科技风海报。
 
@@ -40,43 +40,139 @@ WebSearch: "github claude skills most popular 2026"
 
 去重后补入对应榜单，确保每个榜单至少 5 条。
 
-### 4. 生成 HTML 海报
+### 4. 排行榜计算
 
-读取 `assets/poster-template.html`，将搜索到的技能数据填入模板：
+#### 4.1 热度榜（左列）：按绝对新增星数降序
+直接使用搜索结果的「周期新增星数」排序，取 Top 10。分别生成周榜和月榜。
 
-- 左侧列展示**周榜 Top 10**
-- 右侧列展示**月榜 Top 10**
-- 每个技能条目包含：排名、名称(repo)、星标数、一句话介绍
+#### 4.2 新秀榜（右列）：按增速百分比降序
+计算每项的增速：
+```
+增速 = 周期新增星数 / (总星数 - 周期新增星数) × 100%
+```
 
-**数据注入方式**：
-1. 将周榜数据替换模板中的 `__WEEKLY_DATA__` 占位符
-2. 将月榜数据替换模板中的 `__MONTHLY_DATA__` 占位符
-3. 每个技能卡片的 HTML 结构参考模板中的 `<!-- SKILL_CARD_TEMPLATE -->`
+按增速降序取 Top 10。增速分档决定 badge 颜色：
+- `boom`: > 200%（绿色 `growth-badge boom`）
+- `strong`: 100-200%（青色 `growth-badge strong`）
+- `solid`: 50-100%（琥珀色 `growth-badge solid`）
+- `steady`: < 50%（灰色 `growth-badge steady`）
 
-**技能卡片格式**：
+两张榜单共享 1,000+ 最低星数门槛。
+
+#### 4.3 「为你推荐」加权综合推荐
+
+对每个 skill 计算加权综合得分，取 Top 3 放入「为你推荐」板块：
+
+```
+Score = (增量 / 最大增量) × W1 + (增速 / 最大增速) × W2 + (普适性 / 最大普适性) × W3
+
+默认权重: W1 = 0.3   W2 = 0.4   W3 = 0.3
+```
+
+- **增量**：周期新增星数（归一化到 0-100）
+- **增速**：百分比增长率（归一化到 0-100）
+- **普适性**：总星数，作为通用性的代理指标（归一化到 0-100）
+
+**★ 修改权重**：在 README.md 中搜索「权重配置」可找到修改方法。权重值同时标注在 `poster-template.html` 的 CSS 注释中。三个权重之和应为 1.0。
+
+推荐卡片为全宽可点击链接，包含：排名（顶部色条）、技能名+作者、2-3 句详细描述、三项指标条形图（月增量/月增速/总星数）、综合评分。
+
+**推荐卡片模板**：
 ```html
-<div class="skill-card">
-  <div class="rank">#1</div>
-  <div class="skill-info">
-    <a class="skill-name" href="https://github.com/owner/repo" target="_blank" rel="noopener">owner/repo</a>
-    <div class="skill-desc">一句话简要介绍</div>
+<a href="https://github.com/owner/repo" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+<div class="rec-card r1">
+  <div class="rec-top">
+    <div class="rec-rank">1</div>
+    <div class="rec-name-row">
+      <span class="rec-name">repo</span>
+      <span class="rec-author">owner</span>
+    </div>
   </div>
-  <div class="skill-stars">★ 12.3K</div>
+  <div class="rec-desc">详细描述 (2-3 句，突出增长驱动因素与核心价值)</div>
+  <div class="rec-metrics">
+    <div class="rec-metric">
+      <div class="m-val">33.5K</div><div class="m-label">月增量</div>
+      <div class="m-bar" style="background:var(--amber);width:100%"></div>
+    </div>
+    <div class="rec-metric">
+      <div class="m-val">+2,600%</div><div class="m-label">月增速</div>
+      <div class="m-bar" style="background:var(--green);width:100%"></div>
+    </div>
+    <div class="rec-metric">
+      <div class="m-val">34.8K</div><div class="m-label">总星数</div>
+      <div class="m-bar" style="background:var(--teal);width:100%"></div>
+    </div>
+  </div>
+  <div class="rec-score">综合评分 <em>60.6</em></div>
+</div>
+</a>
+```
+
+### 5. 生成 HTML 海报
+
+读取 `assets/poster-template.html`，将数据填入模板：
+
+- 左侧列：**热度榜**（按新增星数），含周/月 Tab 切换
+- 右侧列：**新秀榜**（按增速百分比），含周/月 Tab 切换
+- 每个技能条目包含：排名、技能名称(repo)、作者(owner)、指标值（热度榜为星数，新秀榜为增速百分比）、一句话介绍
+- **技能名与作者分离**：技能名(repo)左侧突出显示，作者名(owner)右侧弱化显示
+
+**数据注入占位符**：
+| 占位符 | 对应面板 | 卡片类型 |
+|--------|----------|----------|
+| `__HOT_WEEKLY_DATA__` | 热度榜 - 周榜 | `.info-stars`（星数） |
+| `__HOT_MONTHLY_DATA__` | 热度榜 - 月榜 | `.info-stars`（星数） |
+| `__RISE_WEEKLY_DATA__` | 新秀榜 - 周榜 | `.growth-badge`（增速%） |
+| `__RISE_MONTHLY_DATA__` | 新秀榜 - 月榜 | `.growth-badge`（增速%） |
+| `__TOTAL_COUNT__` | Header 统计 | Skills 总数 |
+| `__DATE_RANGE__` | 页脚 | 数据日期范围 |
+
+**热度榜卡片格式**：
+```html
+<div class="card p1">
+  <div class="rank gold">01</div>
+  <div class="info">
+    <div class="info-row">
+      <a class="info-name" href="https://github.com/owner/repo" target="_blank" rel="noopener">repo</a>
+      <span class="info-author">owner</span>
+    </div>
+    <div class="info-desc">一句话简要介绍</div>
+  </div>
+  <div class="info-stars">17.0K</div>
 </div>
 ```
-**链接规则**：skill-name 必须使用 `<a>` 标签，href 指向 `https://github.com/owner/repo`，`target="_blank" rel="noopener"` 在新标签页安全打开。
+
+**新秀榜卡片格式**（用 growth-badge 替代 info-stars）：
+```html
+<div class="card p1">
+  <div class="rank gold">01</div>
+  <div class="info">
+    <div class="info-row">
+      <a class="info-name" href="https://github.com/owner/repo" target="_blank" rel="noopener">repo</a>
+      <span class="info-author">owner</span>
+    </div>
+    <div class="info-desc">一句话简要介绍，突出增长背景</div>
+  </div>
+  <span class="growth-badge boom">+285%</span>
+</div>
+```
+
+**链接规则**：info-name 必须使用 `<a>` 标签，href 指向 `https://github.com/owner/repo`，`target="_blank" rel="noopener"`。info-author 仅为展示文本。
 
 **介绍编写原则**：
 - 控制在 30 字以内
-- 说明该技能的核心功能
-- 从 WebSearch 结果的摘要中提取，结合项目名推断，不要编造
+- 热度榜：说明核心功能
+- 新秀榜：除了核心功能外，可点出增长驱动因素（如「全新项目爆发」「官方背书」「垂直场景精准切入」）
+- 从 WebSearch 结果摘要中提取，结合项目名推断，不要编造
 
-### 5. 输出
+### 6. 输出
 
-将生成的 HTML 写入：
+将生成的 HTML 写入桌面：
 ```
-C:\Users\CIZI\Desktop\TEST\skill-trend-by-claude\index.html
+C:\Users\CIZI\Desktop\Skill-Trend.html
 ```
+
+<!-- ★ 自定义输出路径：修改上面这行即可更改文件保存位置 ★ -->
 
 父目录不存在时自动创建。写入后在对话中告知用户文件路径，让用户直接在浏览器打开。
 
