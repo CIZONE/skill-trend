@@ -42,6 +42,32 @@ cp -r fetch-skills-trend ~/.claude/skills/fetch-skills-trend
 
 ---
 
+## ⚡ 快速使用
+
+安装后只需两步即可生成第一张排行榜：
+
+**第一步：配置输出路径**
+
+打开 `SKILL.md`，找到底部 `### 6. 输出` 章节，将 `<OUTPUT_PATH>` 替换为你的目标路径，如：
+
+```
+D:\my-reports\Skills-Trend.html
+```
+
+> 如果不配置，默认输出到fetch-skills-trend根目录下的 `Skills-Trend.html`。
+
+**第二步：触发技能**
+
+在 Claude Code 中输入：
+
+```
+获取技能趋势
+```
+
+Agent 会自动搜索、排行、生成 HTML，在浏览器打开即可查看。
+
+---
+
 ## 🚀 使用
 
 在 Claude Code 中输入以下任一触发语：
@@ -59,7 +85,7 @@ cp -r fetch-skills-trend ~/.claude/skills/fetch-skills-trend
 2. **数据清洗** — 去重、筛除 ★<1,000 的低星项目
 3. **多维排序** — 热度榜（绝对增量）、新秀榜（增速百分比）、为你推荐（加权综合）
 4. **生成海报** — 将数据填入编辑风格 HTML 模板，零外部依赖
-5. **输出文件** — 默认保存到 `C:\Users\CIZI\Desktop\Skill-Trend.html`
+5. **输出文件** — 默认保存到技能文件夹下的 `Skills-Trend.html`（可通过 `SKILL.md` 配置）
 
 ---
 
@@ -91,7 +117,7 @@ cp -r fetch-skills-trend ~/.claude/skills/fetch-skills-trend
 │  · 浅色/深色双模               │
 └──────────┬───────────────────┘
            ▼
-     输出 Skill-Trend.html
+     输出 Skills-Trend.html
 ```
 
 ### 三张榜单的排序逻辑
@@ -122,15 +148,15 @@ fetch-skills-trend/
 
 ## ⚙️ 自定义输出位置
 
-默认输出到桌面 `C:\Users\CIZI\Desktop\Skill-Trend.html`。如需修改：
+输出路径通过 `SKILL.md` 底部的 `<OUTPUT_PATH>` 占位符配置：
 
 1. 打开 `SKILL.md`
-2. 找到 `### 6. 输出` 章节
-3. 修改代码块中的路径为你想要的路径，例如：
+2. 搜索 `<OUTPUT_PATH>` 定位到 `### 6. 输出` 章节
+3. 将 `<OUTPUT_PATH>` 替换为你的目标路径，例如：
    ```
-   D:\my-reports\Skill-Trend.html
+   D:\my-reports\Skills-Trend.html
    ```
-4. 该行上方有 `<!-- ★ 自定义输出路径 ★ -->` 注释标记
+4. 如果保留占位符不修改，Agent 会自动输出到skill根目录下的 `Skills-Trend.html`
 
 ---
 

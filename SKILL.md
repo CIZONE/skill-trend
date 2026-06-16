@@ -124,8 +124,15 @@ Score = (增量 / 最大增量) × W1 + (增速 / 最大增速) × W2 + (普适�
 | `__HOT_MONTHLY_DATA__` | 热度榜 - 月榜 | `.info-stars`（星数） |
 | `__RISE_WEEKLY_DATA__` | 新秀榜 - 周榜 | `.growth-badge`（增速%） |
 | `__RISE_MONTHLY_DATA__` | 新秀榜 - 月榜 | `.growth-badge`（增速%） |
-| `__TOTAL_COUNT__` | Header 统计 | Skills 总数 |
+| `__RECOMMENDED_DATA__` | 为你推荐 | 3 张 `.rec-card` 推荐卡片 |
+| `__TOTAL_COUNT__` | Header 统计 | Skills 生态总数 |
+| `__LISTED_COUNT__` | Header 统计 | 上榜项目数（周榜+月榜去重） |
 | `__DATE_RANGE__` | 页脚 | 数据日期范围 |
+| `__INSIGHTS_DATA__` | 底部趋势总结 | 3 张 `.ins-card` 趋势卡片 |
+
+**★ 动态计算说明**：
+- `__LISTED_COUNT__`：对周榜和月榜中出现的所有项目按 `owner/repo` 去重后计数，不是固定值。例如周榜 8 个 + 月榜 10 个，去重后可能是 14。
+- `__INSIGHTS_DATA__`：基于本轮搜索结果中的实际数据分布，提炼 3 个核心趋势。每个趋势用 1 个 `.ins-card` 呈现，包含趋势标签(`.ins-label`)、标题(`.ins-title`)和描述(`.ins-desc`)。描述应引用榜上具体项目名和数字增强说服力，不要编造不存在的趋势。模板中已注释掉完整的卡片 HTML 结构供参考。
 
 **热度榜卡片格式**：
 ```html
@@ -165,14 +172,47 @@ Score = (增量 / 最大增量) × W1 + (增速 / 最大增速) × W2 + (普适�
 - 新秀榜：除了核心功能外，可点出增长驱动因素（如「全新项目爆发」「官方背书」「垂直场景精准切入」）
 - 从 WebSearch 结果摘要中提取，结合项目名推断，不要编造
 
+### 5.5 动态内容生成（Agent 必须执行）
+
+#### 上榜项目计数
+
+`__LISTED_COUNT__` 不能写死。Agent 必须：
+1. 收集周榜和月榜中出现的所有项目
+2. 按 `owner/repo` 去重（同一项目同时出现在周榜和月榜只算 1 次）
+3. 将去重后的总数填入 `__LISTED_COUNT__`
+
+#### 趋势总结
+
+`__INSIGHTS_DATA__` 不能写死。Agent 必须基于本轮搜索结果提炼 3 个核心趋势，每个趋势写成一张 `.ins-card`：
+
+```html
+<div class="ins-card">
+  <div class="ins-icon a|b|c"><svg>...</svg></div>
+  <div class="ins-label a|b|c">趋势标签（4-6字）</div>
+  <div class="ins-title">趋势标题（8-15字）</div>
+  <div class="ins-desc">趋势描述（2-4句），引用榜上具体项目名和数字增强说服力。基于搜索结果中的实际数据分布总结，不编造不存在的趋势。</div>
+</div>
+```
+
+三张卡片分别使用 `ins-icon a / ins-label a`、`ins-icon b / ins-label b`、`ins-icon c / ins-label c`（颜色主题：a=琥珀金, b=绿色, c=青色）。
+
+**趋势提炼原则**：
+- 观察榜上项目的共性（哪些品类集中出现？增速分布有何规律？）
+- 引用具体项目名和数字（如「codegraph 月增 +2,527%」「mattpocock/skills 月增 71K」）
+- 结合 ecosystem 背景（Skills 总数、增长阶段等）
+- 每个趋势一个角度，三个趋势合起来覆盖本轮数据的主要信号
+
 ### 6. 输出
 
-将生成的 HTML 写入桌面：
+将生成的 HTML 写入配置的输出路径。Agent 执行时按以下优先级确定路径：
+1. 如果 `<OUTPUT_PATH>` 已被用户替换为具体路径，使用该路径
+2. 否则回退到默认路径：`~/Skills-Trend.html`（`~` 指本技能文件夹根目录，即 `SKILL.md` 所在目录）
+
 ```
-C:\Users\CIZI\Desktop\Skill-Trend.html
+<OUTPUT_PATH>
 ```
 
-<!-- ★ 自定义输出路径：修改上面这行即可更改文件保存位置 ★ -->
+<!-- ★ 配置输出路径：将上面 <OUTPUT_PATH> 替换为你的目标路径，例如 D:\reports\Skills-Trend.html ★ -->
 
 父目录不存在时自动创建。写入后在对话中告知用户文件路径，让用户直接在浏览器打开。
 
